@@ -110,8 +110,12 @@ namespace :nginx do
           config = ERB.new(File.read(config_file)).result(binding)
           upload! StringIO.new(config), '/tmp/nginx.conf'
           arguments = :mv, '/tmp/nginx.conf', fetch(:nginx_application_name)
-          add_sudo_if_required arguments, 'nginx:sites:add', :nginx_sites_available_dir
-          execute *arguments
+
+          if nginx_use_sudo?('nginx:sites:add') || nginx_use_sudo?(:nginx_sites_available_dir)
+            sudo *arguments
+          else
+            execute *arguments
+          end
         end
       end
     end
