@@ -73,8 +73,12 @@ namespace :nginx do
     task command => ['nginx:validate_user_settings'] do
       on release_roles fetch(:nginx_roles) do
         arguments = fetch(:nginx_service_path), command
-        add_sudo_if_required arguments, "nginx:#{command}"
-        execute *arguments
+
+        if nginx_use_sudo?("nginx:#{command}")
+          sudo *arguments
+        else
+          execute *arguments
+        end
       end
     end
     before "nginx:#{command}", 'nginx:configtest' unless command == 'stop'
@@ -126,8 +130,12 @@ namespace :nginx do
         if test "! [ -h #{fetch(:enabled_application)} ]"
           within fetch(:sites_enabled) do
             arguments = :ln, '-nfs', fetch(:available_application), fetch(:enabled_application)
-            add_sudo_if_required arguments, 'nginx:sites:enable', :nginx_sites_enabled_dir
-            execute *arguments
+
+            if nginx_use_sudo?('nginx:sites:enable') || nginx_use_sudo?(:nginx_sites_enabled_dir)
+              sudo *arguments
+            else
+              execute *arguments
+            end
           end
         end
       end
@@ -139,8 +147,12 @@ namespace :nginx do
         if test "[ -f #{fetch(:enabled_application)} ]"
           within fetch(:sites_enabled) do
             arguments = :rm, '-f', fetch(:nginx_application_name)
-            add_sudo_if_required arguments, 'nginx:sites:disable', :nginx_sites_enabled_dir
-            execute *arguments
+
+            if nginx_use_sudo?('nginx:sites:disable') || nginx_use_sudo?(:nginx_sites_enabled_dir)
+              sudo *arguments
+            else
+              execute *arguments
+            end
           end
         end
       end
@@ -152,8 +164,12 @@ namespace :nginx do
         if test "[ -f #{fetch(:available_application)} ]"
           within fetch(:sites_available) do
             arguments = :rm, fetch(:nginx_application_name)
-            add_sudo_if_required arguments, 'nginx:sites:remove', :nginx_sites_available_dir
-            execute *arguments
+
+            if nginx_use_sudo?('nginx:sites:remove') || nginx_use_sudo?(:nginx_sites_available_dir)
+              sudo *arguments
+            else
+              execute *arguments
+            end
           end
         end
       end
